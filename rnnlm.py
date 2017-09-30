@@ -99,7 +99,7 @@ def initModel(vocSize, maxLen):
 	return model
 
 def learn(mdl, inputs, outputs):
-	mdl.fit(inputs, outputs, epochs=3, batch_size=32)
+	mdl.fit(inputs, outputs, epochs=1, batch_size=128)
 
 def renorm(pd):
 	raw = [p**2 for p in pd]

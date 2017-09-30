@@ -12,7 +12,7 @@ if __name__ == "__main__":
 		dictOutFile = sys.argv[2]
 		modelOutFile = sys.argv[3]
 		
-		vocSize = 10000
+		vocSize = 100000
 		maxLen = 50
 		
 		textData = rnnlm.file2text(dataFile, maxLen = maxLen)
