@@ -79,17 +79,23 @@ def text2numio(textData, word2idx, maxLen):
 
 def initModel(vocSize, maxLen):
 	model = Sequential()
-	
-	model.add(Embedding(input_dim = vocSize, output_dim = 128, input_length = maxLen))
-	
-	model.add(LSTM(256, input_shape=(maxLen, 128), return_sequences=True))
+
+	embSize = 512
+	hdnSize = 1024
+
+	model.add(Embedding(input_dim = vocSize, output_dim = embSize, input_length = maxLen))
+
+	model.add(LSTM(hdnSize, input_shape=(maxLen, embSize), return_sequences=True))
 	model.add(Dropout(0.2))
-	
+
+	model.add(LSTM(hdnSize, input_shape=(maxLen, hdnSize), return_sequences=True))
+	model.add(Dropout(0.2))
+
 	model.add(Dense(vocSize))
 	model.add(Activation('softmax'))
-	
-	model.compile(loss='sparse_categorical_crossentropy', optimizer='rmsprop')
-	
+
+	model.compile(loss='sparse_categorical_crossentropy', optimizer='adam')
+
 	return model
 
 def learn(mdl, inputs, outputs):
