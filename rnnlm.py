@@ -1,12 +1,12 @@
+from __future__ import print_function
+
 import sys
 import numpy as np
 import math
 import pickle
 
-from collections import defaultdict, Counter
-
 from keras.models import Sequential, Model
-from keras.layers import Input, Dense, Activation, Dropout
+from keras.layers import Input, Dense, Activation, Dropout, concatenate
 from keras.layers.embeddings import Embedding
 from keras.layers.recurrent import LSTM
 from keras.optimizers import SGD
@@ -14,116 +14,76 @@ from keras.utils import to_categorical
 
 from keras.models import load_model
 
-SOS = 1
-EOS = 2
-OOV = 3
+from txt import SOS, EOS, OOV
 
-def file2text(filename, maxLen = 50):
-	if filename == '-':
-		fh = sys.stdin
-	else:
-		fh = open(filename, 'r')
+def initModelNew(params, embSize = 512, hdnSize = 1024, catEmbSize = 8):
+	# main input
+	inputs = [Input(shape=(params.max, len(params.w2i)))]
 	
-	result = []
+	# inputs for each additional cat
+	for i, cat2idx in enumerate(params.c2i):
+		inputs.append(Input(shape=(params.max, len(cat2idx))))
 	
-	for line in fh:
-		toks = line.strip().lower().split()
-		
-		if toks and len(toks) < maxLen:
-			result.append(toks)
-	
-	if filename != '-':
-		fh.close()
-	
-	return result
+	# feed-forward embeddings for each input separately
+	embeddings = [Dense(embSize if i == 0 else catEmbSize, activation='linear')(inLayer) for i, inLayer in enumerate(inputs)]
 
-def text2dicts(textData, vocSize = 10000):
-	idx2word = { 0: None, SOS: "__s__", EOS: "__/s__", OOV: "UNK" }
-	word2idx = dict(zip(idx2word.values(), idx2word.keys()))
+	embConc = concatenate(embeddings)
 	
-	freq = defaultdict(int)
-
-	for toks in textData:
-		for tok in toks:
-			freq[tok] += 1
+	hidRec1 = Dropout(0.2)(LSTM(hdnSize, return_sequences=True)(embConc))
 	
-	freq = { k: v for k, v in sorted(freq.items(), key=lambda x: -x[1])[:(vocSize - len(idx2word))] }
+	hidRec2 = Dropout(0.2)(LSTM(hdnSize, return_sequences=True)(hidRec1))
 	
-	for tok in sorted(freq, key=lambda x: -freq[x]):
-		idx = len(idx2word)
-		word2idx[tok] = idx
-		idx2word[idx] = tok
+	output = Dense(len(params.w2i), activation='softmax')(hidRec2)
 	
-	return word2idx, idx2word
-	
-def text2numio(textData, word2idx, maxLen):
-	numSnts = len(textData)
-	inputs = np.zeros([numSnts, maxLen], dtype='int32')
-	outputs = np.zeros([numSnts, maxLen, 1], dtype='int32')
-	
-	for i, toks in enumerate(textData):
-		inputs[i,0] = SOS
-		
-		for j, tok in enumerate(toks):
-			try:
-				idx = word2idx[tok]
-			except KeyError:
-				idx = OOV
-			
-			inputs[i, j+1] = idx
-			outputs[i, j, 0] = idx
-		
-		outputs[i, len(toks), 0] = EOS
-	
-	return inputs, outputs
-
-def initModel(vocSize, maxLen):
-	model = Sequential()
-
-	embSize = 512
-	hdnSize = 1024
-
-	model.add(Embedding(input_dim = vocSize, output_dim = embSize, input_length = maxLen))
-
-	model.add(LSTM(hdnSize, input_shape=(maxLen, embSize), return_sequences=True))
-	model.add(Dropout(0.2))
-
-	model.add(LSTM(hdnSize, input_shape=(maxLen, hdnSize), return_sequences=True))
-	model.add(Dropout(0.2))
-
-	model.add(Dense(vocSize))
-	model.add(Activation('softmax'))
-
+	model = Model(inputs=inputs, outputs=[output])
 	model.compile(loss='sparse_categorical_crossentropy', optimizer='adam')
-
+	
 	return model
 
-def learn(mdl, inputs, outputs):
-	mdl.fit(inputs, outputs, epochs=1, batch_size=128)
+#def initModelOld(vocSize, maxLen, embSize = 512, hdnSize = 1024):
+#	model = Sequential()
+#
+#	model.add(Embedding(input_dim = vocSize, output_dim = embSize, input_length = maxLen))
+#
+#	model.add(LSTM(hdnSize, input_shape=(maxLen, embSize), return_sequences=True))
+#	model.add(Dropout(0.2))
+#
+#	model.add(LSTM(hdnSize, input_shape=(maxLen, hdnSize), return_sequences=True))
+#	model.add(Dropout(0.2))
+#
+#	model.add(Dense(vocSize))
+#	model.add(Activation('softmax'))
+#
+#	model.compile(loss='sparse_categorical_crossentropy', optimizer='adam')
+#
+#	return model
 
-def renorm(pd):
-	raw = [p**2 for p in pd]
+def learn(mdl, data):
+	mdl.fit([data.txtIn] + data.catIn, data.out, epochs=1, batch_size=40)
+
+def renorm(pd, temp = 0.5):
+	raw = [p**(1/temp) for p in pd]
 	raw[OOV] = 0
 	s = sum(raw)
 	return [p/s for p in raw]
 
-def sample(mdls):
+def sample(mdls, catVecs, temp = 1.0):
 	(mdl, dicts) = mdls
 	
-	baseInput = np.zeros([1,50], dtype='int32')
+	baseInput = np.zeros([1, dicts['m']], dtype='int32')
 	
 	result = []
 	w = SOS
 	
 	prob = 0.0
 	
-	for i in range(50):
+	for i in range(dicts['m']):
 		baseInput[0, i] = w
 		
 		pd = mdl.predict(baseInput)[0, i]
 		
 		#w = max(enumerate(pd), key=lambda x: x[1] if x[0] != OOV else 0)[0]
-		w = np.random.choice(dicts['v'], p=renorm(pd))
+		w = np.random.choice(dicts['v'], p = renorm(pd, temp))
 		prob += math.log(pd[w])
 		
 		if w == EOS:
@@ -133,10 +93,12 @@ def sample(mdls):
 	
 	return result, prob/(len(result)+1)
 
-def score(snt, models, skipEOS = False):
+def score(snt, models, catVecs, skipEOS = False):
 	(mdl, dicts) = models
 	
 	inputs, outputs = text2numio([snt], dicts['w2i'], dicts['m'])
+	
+	#print(inputs)
 	
 	hyps = mdl.predict(inputs)
 	
@@ -150,16 +112,21 @@ def score(snt, models, skipEOS = False):
 		if inp == 0 or (skipEOS and outp == EOS):
 			break
 		
+		#print(j, outp, pVec)
+		
 		length += 1
 		result += math.log(pVec[outp])
 		
-	#return result / length
-	return result / 10
+	return result / length
 
-def loadModels(modelFile, dictFile):
+def loadModels(modelFile, paramFile):
 	mdl = load_model(modelFile)
 	
-	with open(dictFile, 'rb') as fh:
-		dicts = pickle.load(fh)
+	with open(paramFile, 'rb') as fh:
+		params = pickle.load(fh)
 	
-	return (mdl, dicts)
+	return (mdl, params)
+
+def saveParams(metaparams, filename):
+	with open(filename, 'wb') as fh:
+		pickle.dump(metaparams, fh, protocol=pickle.HIGHEST_PROTOCOL)

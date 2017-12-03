@@ -19,4 +19,4 @@ if __name__ == "__main__":
 		raw, prob = rnnlm.sample(mdls)
 		
 		decoded = [str(mdls[1]['i2w'][i]) for i in raw]
-		print(" ".join(decoded) + " (" + str(prob) + ")")
+		print("".join(decoded).encode(encoding='utf8') + " (" + str(prob) + ")")

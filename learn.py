@@ -1,7 +1,8 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 import sys
 import rnnlm
+import txt
 import pickle
 from keras.models import load_model
 
@@ -9,37 +10,38 @@ if __name__ == "__main__":
 	if len(sys.argv) == 4:
 		#learn from scratch
 		dataFile = sys.argv[1]
-		dictOutFile = sys.argv[2]
+		paramOutFile = sys.argv[2]
 		modelOutFile = sys.argv[3]
 		
-		vocSize = 100000
 		maxLen = 50
+		doChars = True
 		
-		textData = rnnlm.file2text(dataFile, maxLen = maxLen)
-		w2i, i2w = rnnlm.text2dicts(textData, vocSize)
-		inputs, outputs = rnnlm.text2numio(textData, w2i, maxLen)
+		data, params = txt.loadAndClean(dataFile, maxLen, chars = doChars)
 		
-		with open(dictOutFile, 'wb') as fh:
-			pickle.dump({ 'w2i': w2i, 'i2w': i2w, 'v': vocSize, 'm': maxLen }, fh, protocol=pickle.HIGHEST_PROTOCOL)
+		print(data.txtIn[0])
+		print(data.catIn[0][0])
+		print(data.catIn[1][0])
 		
-		lm = rnnlm.initModel(vocSize, maxLen)
+		rnnlm.saveParams(params, paramOutFile)
 		
-		rnnlm.learn(lm, inputs, outputs)
+		lm = rnnlm.initModelNew(params, embSize = (32 if doChars else 256))
+		
+		rnnlm.learn(lm, data)
 		lm.save(modelOutFile)
 		
 	elif len(sys.argv) == 5:
 		#continue learning
 		dataFile = sys.argv[1]
-		dictInFile = sys.argv[2]
+		paramInFile = sys.argv[2]
 		modelInFile = sys.argv[3]
 		modelOutFile = sys.argv[4]
 		
-		(lm, dicts) = rnnlm.loadModels(modelInFile, dictInFile)
+		(lm, params) = rnnlm.loadModels(modelInFile, paramInFile)
 		
-		textData = rnnlm.file2text(dataFile, maxLen = dicts['m'])
-		inputs, outputs = rnnlm.text2numio(textData, dicts['w2i'], dicts['m'])
+		txtData, _, _ = txt.loadFile(dataFile, maxLen = params.max, chars = True)
+		data = txt.getIOData(txtData, params)
 		
-		rnnlm.learn(lm, inputs, outputs)
+		rnnlm.learn(lm, data)
 		lm.save(modelOutFile)
 	else:
 		raise Exception("AAAAA")
