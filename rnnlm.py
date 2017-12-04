@@ -6,7 +6,7 @@ import math
 import pickle
 import txt
 
-from keras.models import Sequential, Model
+from keras.models import Sequential, Model, load_model
 from keras.layers import Input, Dense, Activation, Dropout, concatenate
 from keras.layers.embeddings import Embedding
 from keras.layers.recurrent import LSTM
@@ -64,20 +64,18 @@ def renorm(pd, temp = 0.5):
 	s = sum(raw)
 	return [p/s for p in raw]
 
-def sample(mdls, catVecs, temp = 1.0):
-	(mdl, dicts) = mdls
+def sample(mdl, params, catVecs, temp = 1.0):
+	vocSize = len(params.w2i)
 	
-	vocSize = len(dicts.w2i)
-	
-	baseInput = np.zeros([1, dicts.max, vocSize], dtype='int32')
+	baseInput = np.zeros([1, params.max, vocSize], dtype='int32')
 	
 	result = []
 	w = txt.SOS
 	
 	prob = 0.0
 	
-	for i in range(dicts.max):
-		baseInput[0, i, dicts.w2i[w]] = 1
+	for i in range(params.max):
+		baseInput[0, i, params.w2i[w]] = 1
 		
 		pd = mdl.predict([baseInput] + catVecs)[0, i]
 		
