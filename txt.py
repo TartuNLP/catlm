@@ -112,3 +112,22 @@ def loadAndClean(filename, maxLen, chars = False, vocSize = None):
 	data = getIOData(txtData, params)
 	
 	return data, params
+
+def oneSpec2vec(spec, mapping, repNum):
+	res = np.zeros([1, repNum, len(mapping)])
+	
+	for rawPair in spec.split(','):
+		(cat, val) = rawPair.split(':')
+		
+		for i in range(repNum):
+			res[0, i, mapping[cat]] = val
+	
+	return res
+
+#et:0.3,en:0.7;news:0.9,subs:0.1
+def spec2vec(params, catSpecs):
+	catSpecList = catSpecs.replace(" ", "").split(';')
+	
+	assert(len(catSpecList) == len(params.c2i))
+	
+	return [oneSpec2vec(spec, mapping, params.max) for (spec, mapping) in zip(catSpecList, params.c2i)]
