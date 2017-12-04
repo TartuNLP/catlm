@@ -9,14 +9,16 @@ if __name__ == "__main__":
 	modelInFile = sys.argv[1]
 	dictInFile = sys.argv[2]
 	try:
-		numToSample = int(sys.argv[3])
+		catSpec = sys.argv[3]
 	except IndexError:
-		numToSample = 1
+		catSpec = ""
+
+	numToSample = 1
 	
-	mdls = rnnlm.loadModels(modelInFile, dictInFile)
+	(mdl, params) = rnnlm.loadModels(modelInFile, dictInFile)
 	
 	for _ in range(numToSample):
-		raw, prob = rnnlm.sample(mdls)
+		raw, prob = rnnlm.sample(mdl,  params, txt.spec2vec(params, catSpec))
 		
-		decoded = [str(mdls[1]['i2w'][i]) for i in raw]
+		decoded = [str(params.i2w[i]) for i in raw]
 		print("".join(decoded).encode(encoding='utf8') + " (" + str(prob) + ")")
