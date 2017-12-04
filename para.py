@@ -14,3 +14,6 @@ class Data:
 		self.txtIn = txtIn
 		self.catIn = catIn
 		self.out = out
+	
+	def getJointInput(self):
+		return [self.txtIn] + self.catIn

@@ -4,6 +4,7 @@ import sys
 import numpy as np
 import math
 import pickle
+import txt
 
 from keras.models import Sequential, Model
 from keras.layers import Input, Dense, Activation, Dropout, concatenate
@@ -11,10 +12,6 @@ from keras.layers.embeddings import Embedding
 from keras.layers.recurrent import LSTM
 from keras.optimizers import SGD
 from keras.utils import to_categorical
-
-from keras.models import load_model
-
-from txt import SOS, EOS, OOV
 
 def initModelNew(params, embSize = 512, hdnSize = 1024, catEmbSize = 8):
 	# main input
@@ -59,7 +56,7 @@ def initModelNew(params, embSize = 512, hdnSize = 1024, catEmbSize = 8):
 #	return model
 
 def learn(mdl, data):
-	mdl.fit([data.txtIn] + data.catIn, data.out, epochs=1, batch_size=40)
+	mdl.fit(data.getJointInput(), data.out, epochs=1, batch_size=32)
 
 def renorm(pd, temp = 0.5):
 	raw = [p**(1/temp) for p in pd]
@@ -70,37 +67,37 @@ def renorm(pd, temp = 0.5):
 def sample(mdls, catVecs, temp = 1.0):
 	(mdl, dicts) = mdls
 	
-	baseInput = np.zeros([1, dicts['m']], dtype='int32')
+	vocSize = len(dicts.w2i)
+	
+	baseInput = np.zeros([1, dicts.max, vocSize], dtype='int32')
 	
 	result = []
-	w = SOS
+	w = txt.SOS
 	
 	prob = 0.0
 	
-	for i in range(dicts['m']):
-		baseInput[0, i] = w
+	for i in range(dicts.max):
+		baseInput[0, i, dicts.w2i[w]] = 1
 		
-		pd = mdl.predict(baseInput)[0, i]
+		pd = mdl.predict([baseInput] + catVecs)[0, i]
 		
 		#w = max(enumerate(pd), key=lambda x: x[1] if x[0] != OOV else 0)[0]
-		w = np.random.choice(dicts['v'], p = renorm(pd, temp))
+		w = np.random.choice(vocSize, p = renorm(pd, temp))
 		prob += math.log(pd[w])
 		
-		if w == EOS:
+		if w == txt.EOS:
 			break
 		
 		result.append(w)
 	
-	return result, prob/(len(result)+1)
+	return result, prob / (len(result)+1)
 
 def score(snt, models, catVecs, skipEOS = False):
 	(mdl, dicts) = models
 	
-	inputs, outputs = text2numio([snt], dicts['w2i'], dicts['m'])
+	data = txt.getIOData([snt], dicts)
 	
-	#print(inputs)
-	
-	hyps = mdl.predict(inputs)
+	hyps = mdl.predict(data.getJointInput())
 	
 	result = 0
 	length = 0
