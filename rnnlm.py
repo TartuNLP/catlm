@@ -60,7 +60,7 @@ def learn(mdl, data):
 
 def renorm(pd, temp = 0.5):
 	raw = [p**(1/temp) for p in pd]
-	raw[OOV] = 0
+	raw[txt.OOV] = 0
 	s = sum(raw)
 	return [p/s for p in raw]
 
@@ -70,23 +70,23 @@ def sample(mdl, params, catVecs, temp = 1.0):
 	baseInput = np.zeros([1, params.max, vocSize], dtype='int32')
 	
 	result = []
-	w = txt.SOS
+	wIdx = txt.SOS
 	
 	prob = 0.0
 	
 	for i in range(params.max):
-		baseInput[0, i, params.w2i[w]] = 1
+		baseInput[0, i, wIdx] = 1
 		
 		pd = mdl.predict([baseInput] + catVecs)[0, i]
 		
 		#w = max(enumerate(pd), key=lambda x: x[1] if x[0] != OOV else 0)[0]
-		w = np.random.choice(vocSize, p = renorm(pd, temp))
-		prob += math.log(pd[w])
+		wIdx = np.random.choice(vocSize, p = renorm(pd, temp))
+		prob += math.log(pd[wIdx])
 		
-		if w == txt.EOS:
+		if wIdx == txt.EOS:
 			break
 		
-		result.append(w)
+		result.append(wIdx)
 	
 	return result, prob / (len(result)+1)
 
