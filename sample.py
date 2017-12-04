@@ -1,7 +1,8 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 import sys
 import rnnlm
+import txt
 import pickle
 from keras.models import load_model
 
