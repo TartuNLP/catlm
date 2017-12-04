@@ -55,9 +55,6 @@ def initModelNew(params, embSize = 512, hdnSize = 1024, catEmbSize = 8):
 #
 #	return model
 
-def learn(mdl, data):
-	mdl.fit(data.getJointInput(), data.out, epochs=1, batch_size=32)
-
 def renorm(pd, temp = 0.5):
 	raw = [p**(1/temp) for p in pd]
 	raw[txt.OOV] = 0
@@ -89,6 +86,29 @@ def sample(mdl, params, catVecs, temp = 1.0):
 		result.append(wIdx)
 	
 	return result, prob / (len(result)+1)
+
+def learn(mdl, params, data, batchSize = 32):
+	#mdl.fit(data.getJointInput(), data.out, epochs=1, batch_size=32)
+	
+	bStart = 0
+	counter = 0
+	while bStart < len(data.out):
+		bEnd = bStart + batchSize
+		
+		batchIn = data.getJointInput(start=bStart, end=bEnd)
+		batchOut = data.out[bStart:bEnd]
+		
+		mdl.train_on_batch(batchIn, batchOut)
+		
+		counter += 1
+		
+		if counter % 1000 == 0:
+			catVec = data.getJointInput(start=bStart, end=bEnd+1)[1:]
+			currentSample = sample(mdl, params, catVec, temp = 0.4)
+			print("Batch nr.", counter, "sample:", "".join(currentSample))
+		
+		bStart = bEnd
+	
 
 def score(snt, models, catVecs, skipEOS = False):
 	(mdl, dicts) = models

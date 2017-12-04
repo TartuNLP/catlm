@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import sys
 import rnnlm
@@ -22,7 +22,7 @@ if __name__ == "__main__":
 		
 		lm = rnnlm.initModelNew(params, embSize = (32 if doChars else 256))
 		
-		rnnlm.learn(lm, data)
+		rnnlm.learn(lm, params, data)
 		lm.save(modelOutFile)
 		
 	elif len(sys.argv) == 5:
@@ -37,7 +37,7 @@ if __name__ == "__main__":
 		txtData, _, _ = txt.loadFile(dataFile, maxLen = params.max, chars = True)
 		data = txt.getIOData(txtData, params)
 		
-		rnnlm.learn(lm, data)
+		rnnlm.learn(lm, params, data)
 		lm.save(modelOutFile)
 	else:
 		raise Exception("AAAAA")

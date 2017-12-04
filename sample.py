@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import sys
 import rnnlm
@@ -9,6 +9,7 @@ from keras.models import load_model
 if __name__ == "__main__":
 	modelInFile = sys.argv[1]
 	dictInFile = sys.argv[2]
+	
 	try:
 		catSpec = sys.argv[3]
 	except IndexError:
@@ -22,4 +23,4 @@ if __name__ == "__main__":
 		raw, prob = rnnlm.sample(mdl,  params, txt.spec2vec(params, catSpec))
 		
 		decoded = [str(params.i2w[i]) for i in raw]
-		print("".join(decoded).encode(encoding='utf8') + " (" + str(prob) + ")")
+		print("".join(decoded) + " (" + str(prob) + ")")
