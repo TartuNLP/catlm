@@ -18,10 +18,6 @@ if __name__ == "__main__":
 		
 		data, params = txt.loadAndClean(dataFile, maxLen, chars = doChars)
 		
-		print(data.txtIn[0])
-		print(data.catIn[0][0])
-		print(data.catIn[1][0])
-		
 		rnnlm.saveParams(params, paramOutFile)
 		
 		lm = rnnlm.initModelNew(params, embSize = (32 if doChars else 256))
