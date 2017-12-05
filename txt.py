@@ -136,4 +136,4 @@ def spec2vec(params, catSpecs):
 def rndCatVec(params):
 	rndCats = [random.choice(list(catMap)) for i, catMap in enumerate(params.c2i)]
 	
-	return rndCats, [oneSpec2vec(cat + ":1", , params.max) for cat, mapping in zip(rndCats, params.c2i)]
+	return rndCats, [oneSpec2vec(cat + ":1", mapping, params.max) for cat, mapping in zip(rndCats, params.c2i)]
