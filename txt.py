@@ -1,4 +1,5 @@
 import numpy as np
+import random
 
 from collections import defaultdict
 from para import Params, Data
@@ -131,3 +132,8 @@ def spec2vec(params, catSpecs):
 	assert(len(catSpecList) == len(params.c2i))
 	
 	return [oneSpec2vec(spec, mapping, params.max) for (spec, mapping) in zip(catSpecList, params.c2i)]
+
+def rndCatVec(params):
+	rndCats = [random.choice(list(catMap)) for i, catMap in enumerate(params.c2i)]
+	
+	return rndCats, [oneSpec2vec(cat + ":1", , params.max) for cat, mapping in zip(rndCats, params.c2i)]

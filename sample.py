@@ -13,13 +13,19 @@ if __name__ == "__main__":
 	try:
 		catSpec = sys.argv[3]
 	except IndexError:
-		catSpec = ""
+		catSpec = None
 
 	numToSample = 1
 	
 	(mdl, params) = rnnlm.loadModels(modelInFile, dictInFile)
 	
 	for _ in range(numToSample):
+		if catSpec:
+			specVec = txt.spec2vec(params, catSpec)
+		else:
+			spec, specVec = txt.rndCatVec(params)
+			print(spec)
+		
 		raw, prob = rnnlm.sample(mdl,  params, txt.spec2vec(params, catSpec))
 		
 		decoded = [str(params.i2w[i]) for i in raw]
