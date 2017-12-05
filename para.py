@@ -15,5 +15,5 @@ class Data:
 		self.catIn = catIn
 		self.out = out
 	
-	def getJointInput(self):
-		return [self.txtIn] + self.catIn
+	def getJointInput(self, start = 0, end = -1):
+		return [self.txtIn[start:end]] + [arr[start:end] for arr in self.catIn]
