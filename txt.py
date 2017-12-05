@@ -110,9 +110,9 @@ def loadAndClean(filename, maxLen, chars = False, vocSize = None):
 	
 	params = Params(maxLen, w2i, i2w, c2i)
 	
-	data = getIOData(txtData, params)
+	#data = getIOData(txtData, params)
 	
-	return data, params
+	return txtData, params
 
 def oneSpec2vec(spec, mapping, repNum):
 	res = np.zeros([1, repNum, len(mapping)])

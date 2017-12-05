@@ -16,13 +16,13 @@ if __name__ == "__main__":
 		maxLen = 50
 		doChars = True
 		
-		data, params = txt.loadAndClean(dataFile, maxLen, chars = doChars)
+		txtdata, params = txt.loadAndClean(dataFile, maxLen, chars = doChars)
 		
 		rnnlm.saveParams(params, paramOutFile)
 		
 		lm = rnnlm.initModelNew(params, embSize = (32 if doChars else 256))
 		
-		rnnlm.learn(lm, params, data)
+		rnnlm.learn(lm, params, txtdata)
 		lm.save(modelOutFile)
 		
 	elif len(sys.argv) == 5:

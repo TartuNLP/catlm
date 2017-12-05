@@ -96,25 +96,26 @@ def batchLog(inps, outp, params, mdl, counter, numSamples = 5):
 		sampleStr = "".join([params.i2w[i] for i in currentSample if i > 0])
 		print(str(datetime.now()), "cat:", str(spec), "sample:", sampleStr, "prob:", currProb)
 
-def learn(mdl, params, data, batchSize = 64, reportFreq = 1000):
+def learn(mdl, params, txtdata, batchSize = 64, reportFreq = 1000):
 	#mdl.fit(data.getJointInput(), data.out, epochs=1, batch_size=32)
 	
 	bStart = 0
 	counter = 0
-	while bStart < len(data.out):
+	while bStart < len(txtdata):
 		bEnd = bStart + batchSize
 		
-		batchIn = data.getJointInput(start=bStart, end=bEnd)
-		batchOut = data.out[bStart:bEnd]
+		batchData = txt.getIOData(txtdata[bStart:bEnd], params)
 		
-		mdl.train_on_batch(batchIn, batchOut)
+		#batchIn = data.getJointInput(start=bStart, end=bEnd)
+		#batchOut = data.out[bStart:bEnd]
+		
+		mdl.train_on_batch(batchData.getJointInput(), batchData.out)
 		
 		if counter % reportFreq == 0:
 			batchLog(batchIn, batchOut, params, mdl, counter)
 		
 		bStart = bEnd
 		counter += 1
-	
 
 def score(snt, models, catVecs, skipEOS = False):
 	(mdl, dicts) = models
