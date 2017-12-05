@@ -12,6 +12,7 @@ from keras.layers.embeddings import Embedding
 from keras.layers.recurrent import LSTM
 from keras.optimizers import SGD
 from keras.utils import to_categorical
+from datetime import datetime
 
 def initModelNew(params, embSize = 512, hdnSize = 1024, catEmbSize = 8):
 	# main input
@@ -105,7 +106,7 @@ def learn(mdl, params, data, batchSize = 32):
 		if counter % 10 == 0:
 			catVec = data.getJointInput(start=bStart, end=bEnd+1)[1:]
 			currentSample, currProb = sample(mdl, params, catVec, temp = 0.4)
-			print("Batch nr.", counter, "cat vec:", str(catVec), "sample:", "".join([params.i2w[elem] for elem in currentSample if elem > 0]), currProb)
+			print(str(datetime.now()), "Batch nr.", counter, "cat vec:", str(catVec), "sample:", "".join([params.i2w[elem] for elem in currentSample if elem > 0]), currProb)
 		
 		bStart = bEnd
 	
