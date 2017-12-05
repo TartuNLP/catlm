@@ -26,7 +26,7 @@ if __name__ == "__main__":
 			spec, specVec = txt.rndCatVec(params)
 			print(spec)
 		
-		raw, prob = rnnlm.sample(mdl,  params, txt.spec2vec(params, catSpec))
+		raw, prob = rnnlm.sample(mdl,  params, specVec)
 		
 		decoded = [str(params.i2w[i]) for i in raw]
 		print("".join(decoded) + " (" + str(prob) + ")")
