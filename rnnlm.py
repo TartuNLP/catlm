@@ -96,7 +96,7 @@ def batchLog(data, params, mdl, counter, numSamples = 5):
 		sampleStr = "".join([params.i2w[i] for i in currentSample if i > 0])
 		print(str(datetime.now()), "cat:", str(spec), "sample:", sampleStr, "prob:", currProb)
 
-def learn(mdl, params, txtdata, batchSize = 64, reportFreq = 1000):
+def learn(mdl, params, txtdata, batchSize = 64, reportFreq = 200):
 	#mdl.fit(data.getJointInput(), data.out, epochs=1, batch_size=32)
 	
 	bStart = 0
