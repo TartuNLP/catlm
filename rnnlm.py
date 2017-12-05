@@ -88,8 +88,8 @@ def sample(mdl, params, catVecs, temp = 1.0):
 	
 	return result, prob / (len(result)+1)
 
-def batchLog(inps, outp, params, mdl, counter, numSamples = 5):
-	print(str(datetime.now()), "minibatches:", counter, "loss:", str(mdl.evaluate(inps, outp)))
+def batchLog(data, params, mdl, counter, numSamples = 5):
+	print(str(datetime.now()), "minibatches:", counter, "loss:", str(mdl.evaluate(data.getJointInput(), data.out)))
 	for _ in range(numSamples):
 		spec, vec = txt.rndCatVec(params)
 		currentSample, currProb = sample(mdl, params, vec, temp = 0.4)
@@ -112,7 +112,7 @@ def learn(mdl, params, txtdata, batchSize = 64, reportFreq = 1000):
 		mdl.train_on_batch(batchData.getJointInput(), batchData.out)
 		
 		if counter % reportFreq == 0:
-			batchLog(batchIn, batchOut, params, mdl, counter)
+			batchLog(batchData, params, mdl, counter)
 		
 		bStart = bEnd
 		counter += 1
