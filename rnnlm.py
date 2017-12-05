@@ -102,10 +102,10 @@ def learn(mdl, params, data, batchSize = 32):
 		
 		counter += 1
 		
-		if counter % 1000 == 0:
+		if counter % 10 == 0:
 			catVec = data.getJointInput(start=bStart, end=bEnd+1)[1:]
 			currentSample = sample(mdl, params, catVec, temp = 0.4)
-			print("Batch nr.", counter, "sample:", "".join(currentSample))
+			print("Batch nr.", counter, "cat vec:", str(catVec), "sample:", "".join([params.i2w[elem] for elem in currentSample if elem > 0]))
 		
 		bStart = bEnd
 	
