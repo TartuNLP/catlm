@@ -17,3 +17,14 @@ class Data:
 	
 	def getJointInput(self, start = None, end = None):
 		return [self.txtIn[start:end]] + [arr[start:end] for arr in self.catIn]
+
+
+class Data_nocat:
+	__slots__ = ('txtIn', 'out')
+
+	def __init__(self, txtIn, out):
+		self.txtIn = txtIn
+		self.out = out
+
+	def getJointInput(self, start = None, end = None):
+		return [self.txtIn[start:end]]

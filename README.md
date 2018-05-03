@@ -5,8 +5,7 @@
 
 ### First train
 
-### Scoring multiple sentences (no category)
-
+### Scoring multiple sentences (no category, character model requires to use list(string))
 ```python
 from rnnlm import score_sents_nocat, loadModels
 
