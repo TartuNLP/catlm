@@ -17,25 +17,27 @@ from datetime import datetime
 def initModelNew(params, embSize = 512, hdnSize = 1024, catEmbSize = 8):
 	# main input
 	inputs = [Input(shape=(params.max, len(params.w2i)))]
-	
+
 	# inputs for each additional cat
 	for i, cat2idx in enumerate(params.c2i):
 		inputs.append(Input(shape=(params.max, len(cat2idx))))
-	
+
 	# feed-forward embeddings for each input separately
 	embeddings = [Dense(embSize if i == 0 else catEmbSize, activation='linear')(inLayer) for i, inLayer in enumerate(inputs)]
 
-	embConc = concatenate(embeddings)
-	
-	hidRec1 = Dropout(0.2)(LSTM(hdnSize, return_sequences=True)(embConc))
+	if len(embeddings) == 1:
+		hidRec1 = Dropout(0.2)(LSTM(hdnSize, return_sequences=True)(embeddings[0]))
+	else:
+		embConc = concatenate(embeddings)
+		hidRec1 = Dropout(0.2)(LSTM(hdnSize, return_sequences=True)(embConc))
 	
 	hidRec2 = Dropout(0.2)(LSTM(hdnSize, return_sequences=True)(hidRec1))
-	
+
 	output = Dense(len(params.w2i), activation='softmax')(hidRec2)
-	
+
 	model = Model(inputs=inputs, outputs=[output])
 	model.compile(loss='sparse_categorical_crossentropy', optimizer='adam')
-	
+
 	return model
 
 #def initModelOld(vocSize, maxLen, embSize = 512, hdnSize = 1024):
@@ -128,11 +130,12 @@ def score(snt, models, catVecs, skipEOS = False):
 	length = 0
 	
 	for j, pVec in enumerate(hyps[0]):
-		inp = inputs[0, j]
-		outp = outputs[0, j, 0]
+
+		#inp = inputs[0, j] # correct is inputs[0, j, X]
+		outp = outputs[0, j, 0] #data.out
 		
-		if inp == 0 or (skipEOS and outp == EOS):
-			break
+		#if inp == 0 or (skipEOS and outp == EOS):
+		#	break
 		
 		#print(j, outp, pVec)
 		
@@ -140,6 +143,28 @@ def score(snt, models, catVecs, skipEOS = False):
 		result += math.log(pVec[outp])
 		
 	return result / length
+
+
+def score_sents_nocat(snts, models):
+	(mdl, dicts) = models
+	data = txt.getIOData(snts, dicts)
+
+	hyps = mdl.predict(data.getJointInput())
+
+	results = []
+	inputs, outputs = data.txtIn, data.out
+	for hyp in hyps:
+
+		result = 0
+		length = 0
+		for j, pVec in enumerate(hyp):
+			outp = outputs[0, j, 0]
+
+			length += 1
+			result += math.log(pVec[outp])
+		results.append(result/length)
+
+	return results
 
 def loadModels(modelFile, paramFile):
 	mdl = load_model(modelFile)
