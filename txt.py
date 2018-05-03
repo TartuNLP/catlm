@@ -1,8 +1,9 @@
 import numpy as np
 import random
+import sys
 
 from collections import defaultdict
-from para import Params, Data
+from para import Params, Data_nocat, Data
 
 SOS = 1
 EOS = 2
@@ -53,7 +54,7 @@ def freqs2dicts(tokFreqs, vocSize = None):
 	word2idx = dict(zip(idx2word.values(), idx2word.keys()))
 	
 	if vocSize is None:
-		vocSize = len(tokFreqs) + 4 # None, SOS, EOS, OOV
+		vocSize = len(tokFreqs) + 4 # None, SOS, EOS , OOV
 	
 	endIdx = vocSize - len(idx2word)
 	
@@ -65,26 +66,57 @@ def freqs2dicts(tokFreqs, vocSize = None):
 		idx2word[idx] = tok
 	
 	return word2idx, idx2word
+
+
+def getIOData(textData, para):  # word2idx, cats2idx, maxLen):
+	numSnts = len(textData)
+
+	vocSize = len(para.w2i)
+
+	txtInputs = np.zeros([numSnts, para.max, vocSize], dtype='int32')
+	catInputs = [np.zeros([numSnts, para.max, len(para.c2i[i])], dtype='int32') for i in range(len(para.c2i))]
+
+	outputs = np.zeros([numSnts, para.max, 1], dtype='int32')
+
+	for i, line in enumerate(textData):
+		txtInputs[i, 0, SOS] = 1
+
+		for k, cat in enumerate(line['cats']):
+			catIdx = para.c2i[k][cat]
+
+			catInputs[k][i, 0, catIdx] = 1
+
+		for j, tok in enumerate(line['text']):
+			try:
+				idx = para.w2i[tok]
+			except KeyError:
+				idx = OOV
+
+			txtInputs[i, j + 1, idx] = 1
+			outputs[i, j, 0] = idx
+
+			for k, cat in enumerate(line['cats']):
+				catIdx = para.c2i[k][cat]
+
+				catInputs[k][i, j + 1, catIdx] = 1
+
+		outputs[i, len(line['text']), 0] = EOS
+
+	return Data(txtInputs, catInputs, outputs)
 	
-def getIOData(textData, para): #word2idx, cats2idx, maxLen):
+def getIOData_nocat(textData, para):
+	# Added by Andre
 	numSnts = len(textData)
 	
 	vocSize = len(para.w2i)
-	
 	txtInputs = np.zeros([numSnts, para.max, vocSize], dtype='int32')
-	catInputs = [np.zeros([numSnts, para.max, len(para.c2i[i])], dtype='int32') for i in range(len(para.c2i))]
 	
 	outputs = np.zeros([numSnts, para.max, 1], dtype='int32')
 	
 	for i, line in enumerate(textData):
 		txtInputs[i, 0, SOS] = 1
 		
-		for k, cat in enumerate(line['cats']):
-			catIdx = para.c2i[k][cat]
-			
-			catInputs[k][i, 0, catIdx] = 1
-		
-		for j, tok in enumerate(line['text']):
+		for j, tok in enumerate(line):
 			try:
 				idx = para.w2i[tok]
 			except KeyError:
@@ -92,15 +124,11 @@ def getIOData(textData, para): #word2idx, cats2idx, maxLen):
 			
 			txtInputs[i, j+1, idx] = 1
 			outputs[i, j, 0] = idx
-			
-			for k, cat in enumerate(line['cats']):
-				catIdx = para.c2i[k][cat]
-				
-				catInputs[k][i, j+1, catIdx] = 1
+
 		
-		outputs[i, len(line['text']), 0] = EOS
+		outputs[i, len(line), 0] = EOS
 	
-	return Data(txtInputs, catInputs, outputs)
+	return Data_nocat(txtInputs, outputs)
 
 def loadAndClean(filename, maxLen, chars = False, vocSize = None):
 	txtData, tokFreqs, catFreqs = loadFile(filename, maxLen, chars = chars)
