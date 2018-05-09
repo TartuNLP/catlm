@@ -147,7 +147,7 @@ def score(snt, models, catVecs, skipEOS = False):
 
 def score_sents_nocat(snts, models):
 	(mdl, dicts) = models
-	data = txt.getIOData(snts, dicts)
+	data = txt.getIOData_nocat(snts, dicts)
 
 	hyps = mdl.predict(data.getJointInput())
 
