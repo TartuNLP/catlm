@@ -166,6 +166,24 @@ def score_sents_nocat(snts, models):
 
 	return results
 
+
+def score_sent_nocat(sent, models):
+	(mdl, dicts) = models
+	data = txt.getIOData_nocat([sent], dicts)
+
+	hyps = mdl.predict(data.getJointInput())
+	hyp = hyps[0]
+
+	inputs, outputs = data.txtIn, data.out
+	result = 0
+	length = 0
+	for j, pVec in enumerate(hyp):
+		outp = outputs[0, j, 0]
+
+		length += 1
+		result += math.log(pVec[outp])
+	return result/length
+
 def loadModels(modelFile, paramFile):
 	mdl = load_model(modelFile)
 	
